@@ -1,7 +1,8 @@
 mod emote_values;
 mod scrapper;
 
-use emote_values::Format;
+use crate::scrapper::Scrapper;
+use crate::scrapper::query_7tv::Sort;
 use emote_values::Size;
 use std::cmp::PartialEq;
 use std::io;
@@ -32,6 +33,8 @@ impl FromStr for Command {
 async fn main() {
     print_info();
 
+    let scrapper = Scrapper::new(String::from("https://api.7tv.app/v4/gql")).unwrap();
+
     loop {
         let mut line = String::new();
 
@@ -48,28 +51,23 @@ async fn main() {
                 return;
             }
 
-            download_emote_command(command_parts, command).await
+            download_emote_command(command_parts.clone(), command, scrapper.clone()).await;
+            //download_emotes_command(command_parts, command).await;
         }
     }
 }
 
-async fn download_emote_command(command_parts: Vec<&str>, command: Command) {
-    
+async fn download_emote_command(command_parts: Vec<&str>, command: Command, scrapper: Scrapper) {
     if command == Command::EMOTE {
-
-        let (url, size, emote_format) = set_command_parameters(command_parts);
+        let (url, size) = set_emote_command_parameters(command_parts);
 
         if url.is_empty() {
             println!("Necesito como mínimo la URL del emote");
             return;
         }
 
-        let download_emote_result = scrapper::download_emote(
-            url,
-            Some(get_valid_size(size)),
-            Some(get_valid_emote_format(emote_format)),
-        )
-        .await;
+        let download_emote_result =
+            Scrapper::download_single_emote(&scrapper, url, get_valid_size(size)).await;
 
         let result = match download_emote_result {
             Ok(_result) => "La descarga ha terminado correctamente",
@@ -83,30 +81,32 @@ async fn download_emote_command(command_parts: Vec<&str>, command: Command) {
     }
 }
 
-fn set_command_parameters(command_parts: Vec<&str>) -> (String, String, String) {
-    let (url, size, emote_format) = match command_parts.len() {
-        2 => (
+fn set_emotes_command_parameters(command_parts: Vec<&str>) -> (String, u32) {
+    let (filtro, numero_pagina) = match command_parts.len() {
+        2 => (String::from(command_parts[1]), 1),
+        3 => (
             String::from(command_parts[1]),
-            Size::SIZE4.to_string(),
-            Format::WEBP.to_string(),
+            String::from(command_parts[2]).parse::<u32>().unwrap(),
         ),
+        _ => (Sort::TOPALLTIME.to_string(), 1),
+    };
+    (filtro, numero_pagina)
+}
+
+fn set_emote_command_parameters(command_parts: Vec<&str>) -> (String, String) {
+    let (url, size) = match command_parts.len() {
+        2 => (String::from(command_parts[1]), Size::SIZE4.to_string()),
         3 => (
             String::from(command_parts[1]),
             String::from(command_parts[2]),
-            Format::WEBP.to_string(),
         ),
         4 => (
             String::from(command_parts[1]),
             String::from(command_parts[2]),
-            String::from(command_parts[3]),
         ),
-        _ => (
-            String::new(),
-            Size::SIZE4.to_string(),
-            Format::WEBP.to_string(),
-        ),
+        _ => (String::new(), Size::SIZE4.to_string()),
     };
-    (url, size, emote_format)
+    (url, size)
 }
 
 fn get_valid_size(size: String) -> String {
@@ -117,24 +117,10 @@ fn get_valid_size(size: String) -> String {
     size
 }
 
-fn get_valid_emote_format(emote_format: String) -> String {
-    if emote_format.is_empty() {
-        return String::from(Format::WEBP.to_string());
-    }
-
-    if !emote_format.starts_with('.') {
-        return format!(".{}", emote_format);
-    }
-
-    String::from(emote_format)
-}
-
 fn print_info() {
     println!("Ala monstrou, esto es pa descargar emotes de 7tv.");
     println!("los comando son:");
-    println!(
-        "\"EMOTE\" URL del emote en 7tv (obligatorio) tamaño (1x,2x,3x,4x) y formato (webp [por defecto], png, avif y gif [usa este si sabes que es animado])."
-    );
+    println!("\"EMOTE\" URL del emote en 7tv (obligatorio) y tamaño (1x,2x,3x,4x)).");
     println!(
         "\"EMOTES\" Filtro (Populares,Tendencias,Nuevo [Por defecto populares]) numero de la pagina."
     );

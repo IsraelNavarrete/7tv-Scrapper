@@ -20,25 +20,3 @@ impl Display for Size{
         write!(f, "{}", str)
     }
 }
-
-#[derive(PartialEq, Clone)]
-#[warn(dead_code)]
-pub enum Format {
-    WEBP,
-    PNG,
-    GIF,
-    AVIF,
-}
-
-
-impl Display for Format{
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let str = match self {
-            Format::WEBP => ".webp".to_string(),
-            Format::PNG => ".png".to_string(),
-            Format::GIF => ".gif".to_string(),
-            Format::AVIF => ".avif".to_string(),
-        };
-        write!(f, "{}", str)
-    }
-}
