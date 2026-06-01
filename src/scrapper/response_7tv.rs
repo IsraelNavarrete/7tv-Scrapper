@@ -34,7 +34,7 @@ pub struct Emote {
     pub attribution: Vec<Value>,
     pub images_pending: bool,
     pub images: Vec<Image>,
-    pub ranking: i64,
+    pub ranking: Option<i64>,
     pub deleted: bool,
     #[serde(rename = "__typename")]
     pub typename: String,
