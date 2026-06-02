@@ -1,3 +1,4 @@
+use reqwest::{Response, StatusCode};
 use serde_derive::Deserialize;
 use serde_derive::Serialize;
 use serde_json::Value;
@@ -134,4 +135,66 @@ pub struct Extensions {
 pub struct Analyzer {
     pub complexity: i64,
     pub depth: i64,
+}
+
+pub(crate) async fn handle_singe_emote_response(
+    response: Response,
+    emote_id: &str,
+    size: String,
+) -> Option<(String, String)> {
+    match response.status() {
+        StatusCode::TOO_MANY_REQUESTS => {
+            println!("Demasiadas peticiones a seven_tv, espera un rato y vuelve a intentarlo");
+            None
+        }
+        StatusCode::NOT_FOUND => {
+            println!("No se ha encontrado el emote con ID: {}", emote_id);
+            None
+        }
+        StatusCode::OK => {
+            let body: Root = response.json().await.unwrap();
+
+            let emote_name = body.data.emotes.emote.default_name;
+            let images_emote = body.data.emotes.emote.images;
+
+            filter_correct_image(size, emote_name, images_emote)
+        }
+        _ => {
+            println!("No se ha podido obtener una respuesta.");
+            None
+        }
+    }
+}
+
+fn filter_correct_image(
+    size: String,
+    emote_name: String,
+    images_emote: Vec<Image>,
+) -> Option<(String, String)> {
+    images_emote
+        .iter()
+        .find(|&image| has_gif(image, &size))
+        .or_else(|| has_png(size, &images_emote))
+        .map(|image| (emote_name.clone(), image.url.clone()))
+}
+
+fn has_png(size: String, images_emote: &Vec<Image>) -> Option<&Image> {
+    images_emote
+        .iter()
+        .find(|image| image.mime.contains("png") && is_correct_scale(size.clone(), image))
+}
+
+fn has_gif(image: &Image, size: &String) -> bool {
+    image.mime.contains("gif") && is_correct_scale(size.clone(), image)
+}
+
+fn is_correct_scale(size: String, image: &Image) -> bool {
+    image.scale
+        == size
+            .chars()
+            .next()
+            .unwrap()
+            .to_string()
+            .parse::<i64>()
+            .unwrap()
 }

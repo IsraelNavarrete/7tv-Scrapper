@@ -1,12 +1,14 @@
-mod emote_values;
+mod command_values;
 mod scrapper;
+mod download;
+mod seven_tv;
 
 use crate::scrapper::Scrapper;
-use crate::scrapper::query_7tv::Sort;
-use emote_values::Size;
+use command_values::Size;
 use std::cmp::PartialEq;
 use std::io;
 use std::str::FromStr;
+use crate::seven_tv::emote_search_request_parameters::Sort;
 
 #[derive(PartialEq, Clone, Copy)]
 enum Command {
@@ -43,6 +45,7 @@ async fn main() {
         if line.is_empty() || line == "\r\n" {
             println!("Añade un comando");
         } else {
+
             let command_parts: Vec<&str> = line.split_whitespace().collect();
 
             let command = Command::from_str(&command_parts[0]).unwrap();
@@ -118,9 +121,9 @@ fn get_valid_size(size: String) -> String {
 }
 
 fn print_info() {
-    println!("Ala monstrou, esto es pa descargar emotes de 7tv.");
+    println!("Ala monstrou, esto es pa descargar emotes de seven_tv.");
     println!("los comando son:");
-    println!("\"EMOTE\" URL del emote en 7tv (obligatorio) y tamaño (1x,2x,3x,4x)).");
+    println!("\"EMOTE\" URL del emote en seven_tv (obligatorio) y tamaño (1x,2x,3x,4x)).");
     println!(
         "\"EMOTES\" Filtro (Populares,Tendencias,Nuevo [Por defecto populares]) numero de la pagina."
     );
