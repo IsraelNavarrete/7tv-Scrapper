@@ -22,14 +22,15 @@ impl Display for Size{
     }
 }
 
-#[derive(Serialize)]
-pub(crate) enum Filter {
-    ANIMADO,
-    ESTATICO,
-    SUPERPOSICION,
-    USOPERSONAL,
-    COINCIDENCIAEXACTA,
-}
+// #[derive(Serialize)]
+// pub(crate) enum Filter {
+//     ANIMADO,
+//     ESTATICO,
+//     SUPERPOSICION,
+//     USOPERSONAL,
+//     COINCIDENCIAEXACTA,
+// }
+
 #[derive(PartialEq, Clone, Serialize)]
 #[warn(dead_code)]
 pub enum Sort {

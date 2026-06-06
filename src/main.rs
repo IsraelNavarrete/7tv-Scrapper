@@ -66,8 +66,8 @@ async fn download_emotes_command(command_parts: Vec<&str>, command: Command, scr
 
         let (filter, page) = set_emotes_command_parameters(command_parts);
 
-        let result = match Scrapper::download_emote_page(&scrapper, filter, page).await {
-            Ok(_result) => "La descarga ha terminado correctamente",
+        let result = match Scrapper::download_emote_page(&scrapper, filter.clone(), page).await {
+            Ok(_result) => "Se ha terminado de descargar todos los emotes",
 
             Err(error) => {
                 &(String::from("Se ha producido un error: ") + error.to_string().as_str())
@@ -75,6 +75,7 @@ async fn download_emotes_command(command_parts: Vec<&str>, command: Command, scr
         };
 
         println!("{}", result);
+
     }
 }
 
@@ -102,7 +103,6 @@ async fn download_emote_command(command_parts: Vec<&str>, command: Command, scra
     }
 }
 
-//TODO hacer que populares etc... sean válidos con el valor real de 7tv
 fn set_emotes_command_parameters(command_parts: Vec<&str>) -> (String, u32) {
     let (filtro, numero_pagina) = match command_parts.len() {
         2 => (String::from(command_parts[1]), 1),
