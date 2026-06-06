@@ -2,6 +2,7 @@ use std::path::PathBuf;
 use reqwest::Client;
 use tokio::fs::File;
 use tokio::io::AsyncWriteExt;
+use crate::seven_tv::EmoteImage;
 
 pub(crate) async fn download_image(emote_data: Option<(String, String)>, client: Client) {
 
@@ -36,6 +37,39 @@ pub(crate) async fn download_image(emote_data: Option<(String, String)>, client:
     file.write_all(&image).await.unwrap();
 
     println!("Se ha descargado la imagen en: {}{}", emote_path.to_str().unwrap(), emote_name);
+}
+
+pub(crate) fn filter_correct_image(
+    size: String,
+    emote_name: String,
+    images_emote: Vec<EmoteImage>,
+) -> Option<(String, String)> {
+    images_emote
+        .iter()
+        .find(|&image| has_gif(image, &size))
+        .or_else(|| has_png(size, &images_emote))
+        .map(|image| (emote_name.clone(), image.url.clone()))
+}
+
+fn has_png(size: String, images_emote: &Vec<EmoteImage>) -> Option<&EmoteImage> {
+    images_emote
+        .iter()
+        .find(|image| image.mime.contains("png") && is_correct_scale(size.clone(), image))
+}
+
+fn has_gif(image: &EmoteImage, size: &String) -> bool {
+    image.mime.contains("gif") && is_correct_scale(size.clone(), image)
+}
+
+fn is_correct_scale(size: String, image: &EmoteImage) -> bool {
+    image.scale
+        == size
+        .chars()
+        .next()
+        .unwrap()
+        .to_string()
+        .parse::<i64>()
+        .unwrap()
 }
 
 fn create_emote_save_path() -> PathBuf {

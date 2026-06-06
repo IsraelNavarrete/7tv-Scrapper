@@ -12,8 +12,10 @@ pub(crate) struct QueryOneEmote {
 
 #[derive(Serialize)]
 pub(crate) struct OneEmoteVariables {
+    #[serde(rename = "defaultSetId")]
     pub(crate) default_set_id: String,
     pub(crate) id: String,
+    #[serde(rename = "isDefaultSetSet")]
     pub(crate) is_default_set_set: bool,
 }
 

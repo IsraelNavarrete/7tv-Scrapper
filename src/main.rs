@@ -8,7 +8,7 @@ use command_values::Size;
 use std::cmp::PartialEq;
 use std::io;
 use std::str::FromStr;
-use crate::seven_tv::emote_search_request_parameters::Sort;
+use crate::command_values::Sort;
 
 #[derive(PartialEq, Clone, Copy)]
 enum Command {
@@ -55,8 +55,26 @@ async fn main() {
             }
 
             download_emote_command(command_parts.clone(), command, scrapper.clone()).await;
-            //download_emotes_command(command_parts, command).await;
+            download_emotes_command(command_parts.clone(), command, scrapper.clone()).await;
         }
+    }
+}
+
+async fn download_emotes_command(command_parts: Vec<&str>, command: Command, scrapper: Scrapper) {
+
+    if command == Command::EMOTES {
+
+        let (filter, page) = set_emotes_command_parameters(command_parts);
+
+        let result = match Scrapper::download_emote_page(&scrapper, filter, page).await {
+            Ok(_result) => "La descarga ha terminado correctamente",
+
+            Err(error) => {
+                &(String::from("Se ha producido un error: ") + error.to_string().as_str())
+            }
+        };
+
+        println!("{}", result);
     }
 }
 
@@ -84,6 +102,7 @@ async fn download_emote_command(command_parts: Vec<&str>, command: Command, scra
     }
 }
 
+//TODO hacer que populares etc... sean válidos con el valor real de 7tv
 fn set_emotes_command_parameters(command_parts: Vec<&str>) -> (String, u32) {
     let (filtro, numero_pagina) = match command_parts.len() {
         2 => (String::from(command_parts[1]), 1),
@@ -125,7 +144,7 @@ fn print_info() {
     println!("los comando son:");
     println!("\"EMOTE\" URL del emote en seven_tv (obligatorio) y tamaño (1x,2x,3x,4x)).");
     println!(
-        "\"EMOTES\" Filtro (Populares,Tendencias,Nuevo [Por defecto populares]) numero de la pagina."
+        "\"EMOTES\" Filtro (TOP_ALL_TIME,TRENDING_WEEKLY,UPLOAD_DATE [Por defecto TOP_ALL_TIME]) numero de la pagina (por defecto 1)."
     );
     println!("\"SALIR\"");
 }

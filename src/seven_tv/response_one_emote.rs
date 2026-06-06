@@ -1,7 +1,9 @@
+use crate::download::filter_correct_image;
 use reqwest::{Response, StatusCode};
 use serde_derive::Deserialize;
 use serde_derive::Serialize;
 use serde_json::Value;
+use crate::seven_tv::EmoteImage;
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -34,7 +36,7 @@ pub struct Emote {
     pub flags: Flags,
     pub attribution: Vec<Value>,
     pub images_pending: bool,
-    pub images: Vec<Image>,
+    pub images: Vec<EmoteImage>,
     pub ranking: Option<i64>,
     pub deleted: bool,
     #[serde(rename = "__typename")]
@@ -112,20 +114,6 @@ pub struct Flags {
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct Image {
-    pub url: String,
-    pub mime: String,
-    pub size: i64,
-    pub width: i64,
-    pub height: i64,
-    pub scale: i64,
-    pub frame_count: i64,
-    #[serde(rename = "__typename")]
-    pub typename: String,
-}
-
-#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
 pub struct Extensions {
     pub analyzer: Analyzer,
 }
@@ -137,14 +125,14 @@ pub struct Analyzer {
     pub depth: i64,
 }
 
-pub(crate) async fn handle_singe_emote_response(
+pub(crate) async fn handle_single_emote_response(
     response: Response,
     emote_id: &str,
     size: String,
 ) -> Option<(String, String)> {
     match response.status() {
         StatusCode::TOO_MANY_REQUESTS => {
-            println!("Demasiadas peticiones a seven_tv, espera un rato y vuelve a intentarlo");
+            println!("Demasiadas peticiones a 7tv, espera un rato y vuelve a intentarlo");
             None
         }
         StatusCode::NOT_FOUND => {
@@ -166,35 +154,3 @@ pub(crate) async fn handle_singe_emote_response(
     }
 }
 
-fn filter_correct_image(
-    size: String,
-    emote_name: String,
-    images_emote: Vec<Image>,
-) -> Option<(String, String)> {
-    images_emote
-        .iter()
-        .find(|&image| has_gif(image, &size))
-        .or_else(|| has_png(size, &images_emote))
-        .map(|image| (emote_name.clone(), image.url.clone()))
-}
-
-fn has_png(size: String, images_emote: &Vec<Image>) -> Option<&Image> {
-    images_emote
-        .iter()
-        .find(|image| image.mime.contains("png") && is_correct_scale(size.clone(), image))
-}
-
-fn has_gif(image: &Image, size: &String) -> bool {
-    image.mime.contains("gif") && is_correct_scale(size.clone(), image)
-}
-
-fn is_correct_scale(size: String, image: &Image) -> bool {
-    image.scale
-        == size
-            .chars()
-            .next()
-            .unwrap()
-            .to_string()
-            .parse::<i64>()
-            .unwrap()
-}
